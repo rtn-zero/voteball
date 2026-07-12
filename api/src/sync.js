@@ -31,14 +31,14 @@ async function sync() {
   if (!res.ok) throw new Error(`football-data.org responded ${res.status}`);
   const { matches = [] } = await res.json();
 
-  // Output every real World Cup game with both teams known
-  // (skip only undecided "TBD" knockout slots).
+  // Only games still to be played, with both teams decided — skip games already
+  // finished and undecided "TBD" knockout slots. Keeps the app to the live slate.
   const seen = new Set();
   const fixtures = [];
   for (const m of matches) {
     const h = m.homeTeam || {};
     const a = m.awayTeam || {};
-    if (!h.tla || !a.tla) continue;
+    if (m.status === "FINISHED" || !h.tla || !a.tla) continue;
     const match_id = `${h.tla}_${a.tla}`;
     if (seen.has(match_id)) continue;
     seen.add(match_id);
