@@ -41,29 +41,54 @@ if (window.tsParticles) {
   });
 }
 
-/* Matches */
 const matches = [
   {
     homeCode: "FRA", homeName: "France", homeProb: "62%", homeFlag: "fra.svg",
     awayCode: "MAR", awayName: "Morocco", awayProb: "16%", awayFlag: "mar.svg",
-    drawProb: "22%"
+    drawProb: "22%", userChoice: null
   },
   {
     homeCode: "ESP", homeName: "Spain", homeProb: "58%", homeFlag: "esp.svg",
     awayCode: "BEL", awayName: "Belgium", awayProb: "17%", awayFlag: "bel.svg",
-    drawProb: "25%"
+    drawProb: "25%", userChoice: null
   },
   {
     homeCode: "NOR", homeName: "Norway", homeProb: "25%", homeFlag: "nor.svg",
     awayCode: "ENG", awayName: "England", awayProb: "49%", awayFlag: "eng.svg",
-    drawProb: "26%"
+    drawProb: "26%", userChoice: null
   },
   {
     homeCode: "ARG", homeName: "Argentina", homeProb: "61%", homeFlag: "arg.svg",
     awayCode: "SUI", awayName: "Switzerland", awayProb: "15%", awayFlag: "sui.svg",
-    drawProb: "24%"
+    drawProb: "24%", userChoice: null
   }
 ];
+
+let currentMatchIndex = 0;
+let isThrottled = false;
+
+function handleVoteClick(choice) {
+  matches[currentMatchIndex].userChoice = choice;
+  renderButtonStates();
+}
+
+function renderButtonStates() {
+  const btnHome = document.getElementById("vote-team-1");
+  const btnDraw = document.getElementById("vote-draw");
+  const btnAway = document.getElementById("vote-team-2");
+  const currentChoice = matches[currentMatchIndex].userChoice;
+
+  [btnHome, btnDraw, btnAway].forEach(btn => btn.classList.remove("selected"));
+
+  if (currentChoice === 'home') btnHome.classList.add("selected");
+  if (currentChoice === 'draw') btnDraw.classList.add("selected");
+  if (currentChoice === 'away') btnAway.classList.add("selected");
+}
+
+document.getElementById("vote-team-1").addEventListener("click", () => handleVoteClick('home'));
+document.getElementById("vote-draw").addEventListener("click", () => handleVoteClick('draw'));
+document.getElementById("vote-team-2").addEventListener("click", () => handleVoteClick('away'));
+
 
 function changeMatchWithAnimation(nextIndex, direction) {
   const teamDisplay = document.querySelector(".team-display");
@@ -92,9 +117,6 @@ function changeMatchWithAnimation(nextIndex, direction) {
   }, 300);
 }
 
-let currentMatchIndex = 0;
-let isThrottled = false;
-
 function updateMatchUI(index) {
   const match = matches[index];
   document.getElementById("home-flag").src = `assets/flags/${match.homeFlag}`;
@@ -106,6 +128,8 @@ function updateMatchUI(index) {
   document.getElementById("prob-home").textContent = match.homeProb;
   document.getElementById("prob-draw").textContent = match.drawProb;
   document.getElementById("prob-away").textContent = match.awayProb;
+
+  renderButtonStates();
 }
 
 window.addEventListener("wheel", (event) => {

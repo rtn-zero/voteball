@@ -156,7 +156,7 @@ main {
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 @media (hover: hover) {
@@ -198,6 +198,31 @@ main {
   }
 }
 
+.btn.selected {
+  pointer-events: none;
+}
+
+.btn.home.selected {
+  color: var(--blue-12);
+  background-color: var(--blue-a5);
+  outline: 2px solid var(--blue-12);
+  outline-offset: -2px;
+}
+
+.btn.draw.selected {
+  color: var(--gray-2);
+  background-color: var(--gray-a11);
+  outline: 2px solid var(--gray-12);
+  outline-offset: -2px;
+}
+
+.btn.away.selected {
+  color: var(--red-12);
+  background-color: var(--red-a5);
+  outline: 2px solid var(--red-12);
+  outline-offset: -2px;
+}
+
 /* Transition */
 .team-display, .vote-buttons {
   transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
@@ -237,11 +262,14 @@ main {
   width: 100svw;
   height: clamp(75px, 20svw, 125px);
   z-index: 999;
-  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .football {
   position: absolute;
+  z-index: -1;
   top: 0;
   left: 50%;
   transform: translateX(-50%);
@@ -260,6 +288,7 @@ main {
     0 25px 55px rgba(0, 0, 0, 0.65),
     0 -5px 10px rgba(255, 255, 255, 0.25);
   animation: spinFootball 20s linear infinite;
+  pointer-events: none;
 }
 
 @keyframes spinFootball {
@@ -269,5 +298,37 @@ main {
   
   100% {
     background-position: 0 -396px;
+  }
+}
+
+/* Submit Button */
+.submit-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--green-12);
+  background-color: color-mix(in srgb, var(--green-7) 75%, transparent);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+@media (hover: hover) {
+  .submit-btn:hover {
+    transform: scale(1.05);
+    color: var(--green-12);
+    background-color: var(--green-a5);
+  }
+  .submit-btn:active {
+    transform: scale(0.95);
+  }
+}
+
+@media (hover: none) {
+  .submit-btn:active {
+    transform: scale(0.95);
+    color: var(--green-12);
+    background-color: var(--green-a5);
   }
 }
