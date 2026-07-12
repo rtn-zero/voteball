@@ -46,7 +46,7 @@ if (window.tsParticles) {
 const API_BASE =
   ["localhost", "127.0.0.1", ""].includes(location.hostname)
     ? "http://localhost:3000"
-    : "https://voteball-api.onrender.com"; // <-- replace with your real Render URL
+    : "https://voteball.onrender.com"; // live backend on Render
 
 // Matches come from the backend now (single source of truth). Each item:
 // { match_id, stage, outcomes:[...], home:{code,name,flag}, away:{...}, prediction:{...}, vote_count, userChoice }
