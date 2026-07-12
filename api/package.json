@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/seed.js",
+    "sync": "node src/sync.js",
     "test": "node --test"
   },
   "engines": {

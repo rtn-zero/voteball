@@ -1,18 +1,19 @@
 import { Router } from "express";
 import { Vote } from "../models/Vote.js";
-import { MATCHES_BY_ID, outcomesFor } from "../data/matches.js";
+import { getMatchById } from "../data/fixtures.js";
+import { outcomesFor } from "../data/matches.js";
 import { predict } from "../lib/aggregate.js";
 
 const router = Router();
 
 // POST /api/votes — cast a vote, get back the updated crowd prediction.
-// Body: { match_id, choice }. `choice` must be valid FOR THIS MATCH'S STAGE
+// Body: { match_id, choice }. `choice` must be valid for the match's stage
 // (e.g. "draw" is rejected on a knockout fixture).
 router.post("/", async (req, res, next) => {
   try {
     const { match_id, choice } = req.body ?? {};
 
-    const match = MATCHES_BY_ID.get(match_id);
+    const match = await getMatchById(match_id);
     if (!match) return res.status(404).json({ error: "Unknown match_id" });
 
     const outcomes = outcomesFor(match);

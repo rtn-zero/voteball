@@ -26,9 +26,28 @@ frontend shows the Draw button.
 npm install
 cp .env.example .env        # paste your Atlas URI (or a local mongodb:// URI)
 npm run seed                # seed baseline votes for each match
+npm run sync                # pull real World Cup fixtures (needs FOOTBALL_DATA_TOKEN)
 npm run dev                 # http://localhost:3000 (auto-reload)
 npm test                    # aggregation unit tests (no DB needed)
 ```
+
+## Live fixtures (football-data.org)
+
+Fixtures come from **football-data.org** (free tier includes the FIFA World Cup) and are cached
+in a Mongo `matches` collection — the app reads from the DB, so it never calls the external API at
+request time. If the collection is empty (or the API is unreachable), it falls back to the
+hardcoded set in `src/data/matches.js`, so the app always works.
+
+- **`npm run sync`** pulls every World Cup game with both teams known, maps `stage` (`GROUP_STAGE`
+  → 3-way `group`, everything else → 2-way `knockout`), and upserts them. It seeds baseline votes
+  **only for brand-new matches** — it never wipes existing votes, so it's safe to run repeatedly.
+- Get a free key at <https://www.football-data.org/client/register> and set `FOOTBALL_DATA_TOKEN`.
+- **Scheduled twice-daily** via `.github/workflows/sync-fixtures.yml`. It needs two **repo secrets**
+  (Settings → Secrets and variables → Actions — a repo admin must add these): `MONGODB_URI` and
+  `FOOTBALL_DATA_TOKEN`. You can also trigger it manually from the Actions tab, or just run
+  `npm run sync` locally / in Render's Shell.
+- ⚠️ The API provides teams + flags but **not win probabilities**, so baselines are neutral
+  (group 34/33/33, knockout 50/50). The crowd overrides them as votes come in.
 
 ## API
 
