@@ -1,18 +1,23 @@
 import { Router } from "express";
 import { Vote } from "../models/Vote.js";
-import { MATCHES, MATCHES_BY_ID } from "../data/matches.js";
+import { MATCHES, MATCHES_BY_ID, outcomesFor } from "../data/matches.js";
 import { predict, pickNextMatch } from "../lib/aggregate.js";
 
 const router = Router();
 
-// Build the public shape of a match from its (hardcoded) metadata + its votes.
+// Public shape of a match: team metadata + allowed outcomes + live crowd prediction.
 function toDTO(match, votes) {
-  const { prediction, vote_count } = predict(votes);
+  const outcomes = outcomesFor(match);
+  const { prediction, vote_count } = predict(votes, outcomes);
+  // Before anyone votes, show the seeded baseline; otherwise the live crowd split.
+  const shown = vote_count === 0 ? match.baseline : prediction;
   return {
     match_id: match.match_id,
-    left: match.left,
-    right: match.right,
-    prediction: prediction ?? match.baseline, // fall back to baseline if somehow no votes
+    stage: match.stage,
+    outcomes,
+    home: match.home,
+    away: match.away,
+    prediction: shown,
     vote_count,
   };
 }
