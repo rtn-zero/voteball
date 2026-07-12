@@ -10,7 +10,7 @@ if (window.tsParticles) {
           density: { enable: true, area: 800 }
         },
         shape: { type: 'circle' },
-        color: { 
+        color: {
           value: ['#ffffff', '#e0f2fe', '#fef08a', '#fbcfe8']
         },
         opacity: {
@@ -22,7 +22,7 @@ if (window.tsParticles) {
             startValue: 'random'
           }
         },
-        size: { 
+        size: {
           value: { min: 1, max: 2 },
           animation: {
             enable: true,
@@ -41,34 +41,37 @@ if (window.tsParticles) {
   });
 }
 
-const matches = [
-  {
-    homeCode: "FRA", homeName: "France", homeProb: "62%", homeFlag: "fra.svg",
-    awayCode: "MAR", awayName: "Morocco", awayProb: "16%", awayFlag: "mar.svg",
-    drawProb: "22%", userChoice: null
-  },
-  {
-    homeCode: "ESP", homeName: "Spain", homeProb: "58%", homeFlag: "esp.svg",
-    awayCode: "BEL", awayName: "Belgium", awayProb: "17%", awayFlag: "bel.svg",
-    drawProb: "25%", userChoice: null
-  },
-  {
-    homeCode: "NOR", homeName: "Norway", homeProb: "25%", homeFlag: "nor.svg",
-    awayCode: "ENG", awayName: "England", awayProb: "49%", awayFlag: "eng.svg",
-    drawProb: "26%", userChoice: null
-  },
-  {
-    homeCode: "ARG", homeName: "Argentina", homeProb: "61%", homeFlag: "arg.svg",
-    awayCode: "SUI", awayName: "Switzerland", awayProb: "15%", awayFlag: "sui.svg",
-    drawProb: "24%", userChoice: null
-  }
-];
+// --- API ---------------------------------------------------------------------
+// Local dev talks to the API on :3000; production talks to the deployed backend.
+const API_BASE =
+  ["localhost", "127.0.0.1", ""].includes(location.hostname)
+    ? "http://localhost:3000"
+    : "https://voteball-api.onrender.com"; // <-- replace with your real Render URL
 
+// Matches come from the backend now (single source of truth). Each item:
+// { match_id, stage, outcomes:[...], home:{code,name,flag}, away:{...}, prediction:{...}, vote_count, userChoice }
+let matches = [];
 let currentMatchIndex = 0;
 let isThrottled = false;
 
+async function loadMatches() {
+  const res = await fetch(`${API_BASE}/api/matches`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  matches = data.matches.map((m) => ({ ...m, userChoice: null }));
+  if (matches.length) updateMatchUI(0);
+}
+
+function currentMatch() {
+  return matches[currentMatchIndex];
+}
+
+// --- voting (local selection) ------------------------------------------------
 function handleVoteClick(choice) {
-  matches[currentMatchIndex].userChoice = choice;
+  const match = currentMatch();
+  if (!match) return;
+  if (!match.outcomes.includes(choice)) return; // e.g. "draw" on a knockout match
+  match.userChoice = choice;
   renderButtonStates();
 }
 
@@ -76,9 +79,9 @@ function renderButtonStates() {
   const btnHome = document.getElementById("vote-team-1");
   const btnDraw = document.getElementById("vote-draw");
   const btnAway = document.getElementById("vote-team-2");
-  const currentChoice = matches[currentMatchIndex].userChoice;
+  const currentChoice = currentMatch()?.userChoice;
 
-  [btnHome, btnDraw, btnAway].forEach(btn => btn.classList.remove("selected"));
+  [btnHome, btnDraw, btnAway].forEach((btn) => btn.classList.remove("selected"));
 
   if (currentChoice === 'home') btnHome.classList.add("selected");
   if (currentChoice === 'draw') btnDraw.classList.add("selected");
@@ -89,7 +92,75 @@ document.getElementById("vote-team-1").addEventListener("click", () => handleVot
 document.getElementById("vote-draw").addEventListener("click", () => handleVoteClick('draw'));
 document.getElementById("vote-team-2").addEventListener("click", () => handleVoteClick('away'));
 
+// --- submit (send vote to the backend) ---------------------------------------
+const submitBtn = document.getElementById("submit-btn");
+const tipEl = document.querySelector(".tip");
+let tipResetTimer = null;
 
+function flashTip(msg) {
+  if (!tipEl) return;
+  const original = tipEl.dataset.original || tipEl.textContent;
+  tipEl.dataset.original = original;
+  tipEl.textContent = msg;
+  clearTimeout(tipResetTimer);
+  tipResetTimer = setTimeout(() => { tipEl.textContent = original; }, 2000);
+}
+
+submitBtn.addEventListener("click", async () => {
+  const match = currentMatch();
+  if (!match) return;
+  if (!match.userChoice) { flashTip("Pick an outcome first!"); return; }
+
+  submitBtn.disabled = true;
+  const label = submitBtn.textContent;
+  try {
+    const res = await fetch(`${API_BASE}/api/votes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ match_id: match.match_id, choice: match.userChoice }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const updated = await res.json();
+    match.prediction = updated.prediction;
+    match.vote_count = updated.vote_count;
+    setProbabilities(match);
+    submitBtn.textContent = "Voted! ✓";
+  } catch (err) {
+    submitBtn.textContent = "Try again";
+    console.error("vote failed", err);
+  } finally {
+    setTimeout(() => { submitBtn.textContent = label; submitBtn.disabled = false; }, 1500);
+  }
+});
+
+// --- rendering ---------------------------------------------------------------
+function setProbabilities(match) {
+  const p = match.prediction || {};
+  document.getElementById("prob-home").textContent = `${p.home ?? 0}%`;
+  document.getElementById("prob-away").textContent = `${p.away ?? 0}%`;
+  if (p.draw !== undefined) document.getElementById("prob-draw").textContent = `${p.draw}%`;
+}
+
+function updateMatchUI(index) {
+  const match = matches[index];
+  if (!match) return;
+
+  document.getElementById("home-flag").src = `/assets/flags/${match.home.flag}`;
+  document.getElementById("away-flag").src = `/assets/flags/${match.away.flag}`;
+  document.getElementById("home-code").textContent = match.home.code;
+  document.getElementById("away-code").textContent = match.away.code;
+  document.getElementById("vote-team-1").textContent = match.home.name;
+  document.getElementById("vote-team-2").textContent = match.away.name;
+
+  // Draw only applies to matches that can end level (group stage).
+  const drawWrapper = document.getElementById("vote-draw").parentElement;
+  drawWrapper.style.display = match.outcomes.includes("draw") ? "" : "none";
+
+  setProbabilities(match);
+  renderButtonStates();
+}
+
+// --- match carousel (scroll / swipe) -----------------------------------------
 function changeMatchWithAnimation(nextIndex, direction) {
   const teamDisplay = document.querySelector(".team-display");
   const voteButtons = document.querySelector(".vote-buttons");
@@ -117,26 +188,11 @@ function changeMatchWithAnimation(nextIndex, direction) {
   }, 300);
 }
 
-function updateMatchUI(index) {
-  const match = matches[index];
-  document.getElementById("home-flag").src = `assets/flags/${match.homeFlag}`;
-  document.getElementById("away-flag").src = `assets/flags/${match.awayFlag}`;
-  document.getElementById("home-code").textContent = match.homeCode;
-  document.getElementById("away-code").textContent = match.awayCode;
-  document.getElementById("vote-team-1").textContent = match.homeName;
-  document.getElementById("vote-team-2").textContent = match.awayName;
-  document.getElementById("prob-home").textContent = match.homeProb;
-  document.getElementById("prob-draw").textContent = match.drawProb;
-  document.getElementById("prob-away").textContent = match.awayProb;
-
-  renderButtonStates();
-}
-
 window.addEventListener("wheel", (event) => {
-  if (isThrottled) return;
+  if (isThrottled || !matches.length) return;
 
   if (event.deltaY > 0) {
-    currentMatchIndex = (currentMatchIndex + 1) % matches.length; 
+    currentMatchIndex = (currentMatchIndex + 1) % matches.length;
     changeMatchWithAnimation(currentMatchIndex, 'down');
     triggerThrottle();
   } else if (event.deltaY < 0) {
@@ -152,7 +208,7 @@ window.addEventListener("touchstart", (e) => {
 });
 
 window.addEventListener("touchend", (e) => {
-  if (isThrottled) return;
+  if (isThrottled || !matches.length) return;
   const touchEndY = e.changedTouches[0].clientY;
   const diffY = touchStartY - touchEndY;
 
@@ -174,3 +230,9 @@ function triggerThrottle() {
     isThrottled = false;
   }, 500);
 }
+
+// --- boot --------------------------------------------------------------------
+loadMatches().catch((err) => {
+  console.error("Could not load matches", err);
+  flashTip("Couldn't reach the server — is the API awake?");
+});

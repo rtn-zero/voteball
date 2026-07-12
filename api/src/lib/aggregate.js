@@ -1,32 +1,54 @@
 // Pure aggregation functions — no DB, no framework. Unit-tested in test/aggregate.test.js.
-// Swap the internals here later (recency-weighted / trimmed mean) without touching routes.
+// Swap the internals here later (recency-weighted / trimmed) without touching routes.
+
+// Turn raw outcome counts into integer percentages that ALWAYS sum to 100, using the
+// largest-remainder method (so 1/3+1/3+1/3 -> 34/33/33, never 33/33/33 = 99).
+function toPercentages(counts, outcomes) {
+  const total = outcomes.reduce((acc, o) => acc + (counts[o] || 0), 0);
+  if (total === 0) {
+    return Object.fromEntries(outcomes.map((o) => [o, 0]));
+  }
+  const exact = outcomes.map((o) => ({ o, raw: ((counts[o] || 0) * 100) / total }));
+  const floored = exact.map((e) => ({ ...e, base: Math.floor(e.raw), rem: e.raw - Math.floor(e.raw) }));
+  let leftover = 100 - floored.reduce((acc, e) => acc + e.base, 0);
+  // hand the leftover points to the largest remainders first
+  floored
+    .slice()
+    .sort((a, b) => b.rem - a.rem)
+    .forEach((e) => {
+      if (leftover > 0) { e.base += 1; leftover -= 1; }
+    });
+  return Object.fromEntries(floored.map((e) => [e.o, e.base]));
+}
 
 /**
  * Aggregate a match's votes into a live crowd prediction.
- * @param {Array<{win_rate: number}>} votes
- * @returns {{ prediction: number|null, vote_count: number }}
- *   prediction = rounded mean of the LEFT team's win %, or null when there are no votes.
+ * @param {Array<{choice: string}>} votes
+ * @param {string[]} outcomes  allowed outcomes for this match (from outcomesFor)
+ * @returns {{ prediction: Object, vote_count: number }}
+ *   prediction is keyed by outcome (e.g. {home,draw,away} or {home,away}) summing to 100.
  */
-export function predict(votes) {
-  const vote_count = votes.length;
-  if (vote_count === 0) return { prediction: null, vote_count: 0 };
-  const sum = votes.reduce((acc, v) => acc + v.win_rate, 0);
-  return { prediction: Math.round(sum / vote_count), vote_count };
+export function predict(votes, outcomes) {
+  const counts = {};
+  for (const v of votes) {
+    if (outcomes.includes(v.choice)) counts[v.choice] = (counts[v.choice] || 0) + 1;
+  }
+  return { prediction: toPercentages(counts, outcomes), vote_count: votes.length };
 }
 
 /**
  * Engagement nudge: which match should we steer the next voter toward?
- * Rule: fewest votes first; tie-break on "most contested" (prediction closest to 50).
- * @param {Array<{match_id: string, prediction: number|null, vote_count: number}>} matches
- * @returns {string|null} the winning match_id, or null when there are no matches.
+ * Rule: fewest votes first; tie-break on "most contested" (lowest leading outcome %).
+ * @param {Array<{match_id: string, prediction: Object, vote_count: number}>} matches
+ * @returns {string|null}
  */
 export function pickNextMatch(matches) {
   if (matches.length === 0) return null;
-  const contested = (m) => Math.abs((m.prediction ?? 50) - 50);
+  const leader = (m) => Math.max(0, ...Object.values(m.prediction || {}));
   return matches
     .slice()
     .sort((a, b) => {
       if (a.vote_count !== b.vote_count) return a.vote_count - b.vote_count;
-      return contested(a) - contested(b);
+      return leader(a) - leader(b);
     })[0].match_id;
 }
