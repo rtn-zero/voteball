@@ -125,11 +125,15 @@ submitBtn.addEventListener("click", async () => {
     match.vote_count = updated.vote_count;
     setProbabilities(match);
     submitBtn.textContent = "Voted! ✓";
+    sessionStorage.setItem(`voted_${match.match_id}`, "true");
   } catch (err) {
     submitBtn.textContent = "Try again";
     console.error("vote failed", err);
   } finally {
-    setTimeout(() => { submitBtn.textContent = label; submitBtn.disabled = false; }, 1500);
+    setTimeout(() => {
+      submitBtn.textContent = label;
+      submitBtn.disabled = sessionStorage.getItem(`voted_${match.match_id}`) === "true";
+    }, 1500);
   }
 });
 
@@ -158,6 +162,8 @@ function updateMatchUI(index) {
 
   setProbabilities(match);
   renderButtonStates();
+  
+  submitBtn.disabled = sessionStorage.getItem(`voted_${match.match_id}`) === "true";
 }
 
 // --- match carousel (scroll / swipe) -----------------------------------------

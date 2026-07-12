@@ -332,3 +332,7 @@ main {
     background-color: var(--green-a5);
   }
 }
+
+.submit-btn:disabled {
+  opacity: 0.25;
+}
