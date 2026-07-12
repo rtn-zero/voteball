@@ -38,11 +38,48 @@
     
     <!-- Main -->
     <main>
+      <h2>Match Prediction</h2>
+
       <div class="team-display">
-        <img src="/assets/flags/fra.svg" alt="France Flag" width="50" height="50">
-        
+
+        <!-- Team 1 -->
+        <div class="team">
+          <img id="home-flag" src="/assets/flags/fra.svg" alt="Home Flag" width="75" height="75">
+          <span id="home-code">FRA</span>
+        </div>
+
+        <span>VS</span>
+
+        <!-- Team 2 -->
+        <div class="team">
+          <img id="away-flag" src="/assets/flags/mar.svg" alt="Away Flag" width="75" height="75">
+          <span id="away-code">MAR</span>
+        </div>
+
       </div>
       
+      <div class="vote-buttons">
+        
+        <!-- Team 1 Button -->
+        <div class="btn-wrapper">
+          <button class="btn home" id="vote-team-1">France</button>
+          <span id="prob-home">62%</span>
+        </div>
+
+        <!-- Draw Button -->
+        <div class="btn-wrapper">
+          <button class="btn draw" id="vote-draw">Draw</button>
+          <span id="prob-draw">22%</span>
+        </div>
+
+        <!-- Team 2 Button -->
+        <div class="btn-wrapper">
+          <button class="btn away" id="vote-team-2">Morocco</button>
+          <span id="prob-away">16%</span>
+        </div>
+
+      </div>
+
     </main>
     
     <!-- 3D Football -->
