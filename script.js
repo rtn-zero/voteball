@@ -130,10 +130,13 @@ submitBtn.addEventListener("click", async () => {
     submitBtn.textContent = "Try again";
     console.error("vote failed", err);
   } finally {
-    setTimeout(() => {
-      submitBtn.textContent = label;
-      submitBtn.disabled = sessionStorage.getItem(`voted_${match.match_id}`) === "true";
-    }, 1500);
+    if (sessionStorage.getItem(`voted_${match.match_id}`) === "true") {
+      setTimeout(() => {
+        submitBtn.textContent = label;
+        submitBtn.disabled = true;
+        submitBtn.classList.add("voted-done");
+      }, 1500);
+    }
   }
 });
 
@@ -163,7 +166,15 @@ function updateMatchUI(index) {
   setProbabilities(match);
   renderButtonStates();
   
-  submitBtn.disabled = sessionStorage.getItem(`voted_${match.match_id}`) === "true";
+  const hasVoted = sessionStorage.getItem(`voted_${match.match_id}`) === "true";
+  submitBtn.disabled = hasVoted;
+  if (hasVoted) {
+    submitBtn.textContent = "Submit Your Vote";
+    submitBtn.classList.add("voted-done");
+  } else {
+    submitBtn.classList.remove("voted-done");
+  }
+  
 }
 
 // --- match carousel (scroll / swipe) -----------------------------------------

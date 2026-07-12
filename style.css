@@ -333,6 +333,7 @@ main {
   }
 }
 
-.submit-btn:disabled {
+.submit-btn.voted-done {
   opacity: 0.25;
+  transition: opacity 0.3s ease;
 }
