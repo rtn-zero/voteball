@@ -304,7 +304,7 @@ main {
 /* Submit Button */
 .submit-btn {
   padding: 0.75rem 1.5rem;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: bold;
   color: var(--green-12);
   background-color: color-mix(in srgb, var(--green-7) 75%, transparent);
