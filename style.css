@@ -11,9 +11,20 @@ body {
   font-family: "Inter", sans-serif;
   color: color-mix(in srgb, var(--gray-11), var(--gray-12));
   overflow: hidden;
+}
+
+#content {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 5rem;
+}
+
+.container {
+  width: 100%;
+  max-width: 1024px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Stars */
@@ -48,6 +59,7 @@ header {
   align-items: center;
   gap: 1rem;
   text-align: center;
+  width: 100%;
   padding: 1rem 1.5rem 1.5rem 1.5rem;
   background-color: rgba(255, 255, 255, 0.15);
   border-radius: 0 0 1.5rem 1.5rem;
@@ -56,6 +68,20 @@ header {
 
 header p {
   font-size: 0.9rem;
+}
+
+/* Main */
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  background-color: var(--gray-a5);
+}
+
+/* Team Display */
+.team-display {
+  
 }
 
 /* 3D Football */
