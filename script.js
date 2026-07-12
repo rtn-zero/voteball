@@ -69,8 +69,8 @@ function currentMatch() {
 // --- voting (local selection) ------------------------------------------------
 function handleVoteClick(choice) {
   const match = currentMatch();
-  if (!match) return;
-  if (!match.outcomes.includes(choice)) return; // e.g. "draw" on a knockout match
+  if (!match || sessionStorage.getItem(`voted_${match.match_id}`) === "true") return;
+  if (!match.outcomes.includes(choice)) return;
   match.userChoice = choice;
   renderButtonStates();
 }
@@ -126,6 +126,7 @@ submitBtn.addEventListener("click", async () => {
     setProbabilities(match);
     submitBtn.textContent = "Voted! ✓";
     sessionStorage.setItem(`voted_${match.match_id}`, "true");
+    sessionStorage.setItem(`choice_${match.match_id}`, match.userChoice);
   } catch (err) {
     submitBtn.textContent = "Try again";
     console.error("vote failed", err);
@@ -151,7 +152,12 @@ function setProbabilities(match) {
 function updateMatchUI(index) {
   const match = matches[index];
   if (!match) return;
-
+  
+  const savedChoice = sessionStorage.getItem(`choice_${match.match_id}`);
+  if (savedChoice) {
+    match.userChoice = savedChoice;
+  }
+  
   document.getElementById("home-flag").src = `/assets/flags/${match.home.flag}`;
   document.getElementById("away-flag").src = `/assets/flags/${match.away.flag}`;
   document.getElementById("home-code").textContent = match.home.code;
